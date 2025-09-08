@@ -151,20 +151,25 @@ async def me(request: Request):
 
 # ---------- Stripe Checkout endpoint ----------
 @app.post("/create-checkout-session")
-async def create_checkout_session(request: Request, product_id: str):
+async def create_checkout_session(request: Request, checkout_request: CheckoutRequest):
     # Check if user is authenticated
     user = request.session.get("user")
     if not user:
+        print("Authentication failed: No user in session")
         raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    product_id = checkout_request.product_id
     
     # Validate product
     product = PRODUCTS.get(product_id)
     if not product:
+        print(f"Product not found: {product_id}")
         raise HTTPException(status_code=404, detail="Product not found")
     
     try:
+        print(f"Creating checkout session for user {user['id']}, product {product_id}")
+        
         # Create Stripe checkout session
-                # ...existing code...
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -179,19 +184,21 @@ async def create_checkout_session(request: Request, product_id: str):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=str(request.url_for('payment_success', _external=True)) +
-                f"?session_id={{CHECKOUT_SESSION_ID}}&user_id={user['id']}&product_id={product_id}",
-            cancel_url=str(request.url_for('payment_cancel', _external=True)),
+            success_url=request.url_for('payment_success', _external=True) + 
+                       f"?session_id={{CHECKOUT_SESSION_ID}}&user_id={user['id']}&product_id={product_id}",
+            cancel_url=request.url_for('payment_cancel', _external=True),
             client_reference_id=user['id'],
             metadata={
                 "user_id": user['id'],
                 "product_id": product_id
             }
         )
-        # ...existing code...
         
+        print(f"Checkout session created: {checkout_session.id}")
         return JSONResponse({"id": checkout_session.id})
+        
     except Exception as e:
+        print(f"Error creating checkout session: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ---------- Payment Success endpoint ----------
