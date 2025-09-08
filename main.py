@@ -1,42 +1,43 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from urllib.parse import quote, unquote
 
 app = FastAPI()
 
-from fastapi.middleware.cors import CORSMiddleware
-
-# Add this after app = FastAPI()
+# ---------- CORS setup ----------
 origins = [
     "https://safloetsystems.xyz",
     "https://test.safloetsystems.xyz"
 ]
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="supersecret",
-    session_cookie="session",
-    https_only=True,
-    same_site="none"
-)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,         # domains allowed to access
-    allow_credentials=True,        # required for cookies
+    allow_origins=origins,
+    allow_credentials=True,   # required for sending cookies
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
-# Discord OAuth config
+# ---------- Session setup ----------
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="supersecret",   # change for production
+    session_cookie="session",
+    https_only=True,
+    same_site="none"            # allows cross-site cookies
+)
+
+# ---------- Discord OAuth ----------
 CLIENT_ID = os.getenv("DISCORD_CLIENT_ID") or "1414629698495053904"
 CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET") or "qCBWaQvMPC9lzdX3HVISwsNwcfunCY1e"
 REDIRECT_URI = os.getenv("REDIRECT_URI") or "https://auth.safloetsystems.xyz/callback"
 DISCORD_API = "https://discord.com/api"
 
-# Home page (for testing)
+# ---------- Home (for testing) ----------
 @app.get("/")
 async def home(request: Request):
     user = request.session.get("user")
@@ -48,7 +49,7 @@ async def home(request: Request):
         """)
     return HTMLResponse('<a href="/login">Login with Discord</a>')
 
-# Login endpoint with optional 'next' URL
+# ---------- Login endpoint ----------
 @app.get("/login")
 async def login(next: str = "https://safloetsystems.xyz"):
     discord_redirect = (
@@ -58,7 +59,7 @@ async def login(next: str = "https://safloetsystems.xyz"):
     )
     return RedirectResponse(discord_redirect)
 
-# Callback endpoint
+# ---------- Callback endpoint ----------
 @app.get("/callback")
 async def callback(request: Request, code: str, state: str = ""):
     next_url = unquote(state) if state else "https://safloetsystems.xyz"
@@ -90,13 +91,13 @@ async def callback(request: Request, code: str, state: str = ""):
 
     return RedirectResponse(next_url)
 
-# Logout endpoint
+# ---------- Logout endpoint ----------
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse("https://safloetsystems.xyz")
 
-# Endpoint for frontend to get user info
+# ---------- Get current user ----------
 @app.get("/me")
 async def me(request: Request):
     user = request.session.get("user")
