@@ -7,13 +7,27 @@ from urllib.parse import quote, unquote
 
 app = FastAPI()
 
-# ✅ Cross-domain session support
+from fastapi.middleware.cors import CORSMiddleware
+
+# Add this after app = FastAPI()
+origins = [
+    "https://safloetsystems.xyz",
+    "https://test.safloetsystems.xyz"
+]
 app.add_middleware(
     SessionMiddleware,
-    secret_key="supersecret",   # change this in production
+    secret_key="supersecret",
     session_cookie="session",
-    https_only=True,            # required for SameSite=None
-    same_site="none"            # allows cross-site cookies
+    https_only=True,
+    same_site="none"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,         # domains allowed to access
+    allow_credentials=True,        # required for cookies
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Discord OAuth config
