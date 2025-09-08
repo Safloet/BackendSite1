@@ -7,9 +7,9 @@ import os
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="supersecret")  # change this to something strong
 
-CLIENT_ID = os.getenv("1414629698495053904")
-CLIENT_SECRET = os.getenv("qCBWaQvMPC9lzdX3HVISwsNwcfunCY1e")
-REDIRECT_URI = os.getenv("https://auth.safloetsystems.xyz/callback", "https://auth.safloetsystems.xyz/callback")
+CLIENT_ID = "1414629698495053904"
+CLIENT_SECRET = "qCBWaQvMPC9lzdX3HVISwsNwcfunCY1e"
+REDIRECT_URI = "https://auth.safloetsystems.xyz/callback"
 DISCORD_API = "https://discord.com/api"
 
 @app.get("/")
