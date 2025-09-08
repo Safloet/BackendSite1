@@ -95,7 +95,8 @@ async def callback(request: Request, code: str, state: str = ""):
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("https://safloetsystems.xyz")
+    return JSONResponse({"success": True})
+
 
 # ---------- Get current user ----------
 @app.get("/me")
