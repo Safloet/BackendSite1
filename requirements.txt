@@ -3,3 +3,5 @@ uvicorn
 httpx
 python-dotenv
 itsdangerous
+stripe>=7.0.0
+firebase-admin>=6.0.0
