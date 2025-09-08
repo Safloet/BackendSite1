@@ -7,17 +7,21 @@ import os
 import stripe
 from urllib.parse import quote, unquote
 import firebase_admin
-
 from firebase_admin import credentials, firestore
 from datetime import datetime
 
 app = FastAPI()
 
+from pydantic import BaseModel
+
+class CheckoutRequest(BaseModel):
+    product_id: str
+    
 # ---------- Firebase setup ----------
 try:
     # Initialize Firebase
     if not firebase_admin._apps:
-        cred = credentials.Certificate("path/to/your/serviceAccountKey.json")
+        cred = credentials.Certificate("firebase.json")
         firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
@@ -170,6 +174,7 @@ async def create_checkout_session(request: Request, checkout_request: CheckoutRe
         print(f"Creating checkout session for user {user['id']}, product {product_id}")
         
         # Create Stripe checkout session
+        # ...existing code...
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -184,15 +189,16 @@ async def create_checkout_session(request: Request, checkout_request: CheckoutRe
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=request.url_for('payment_success', _external=True) + 
-                       f"?session_id={{CHECKOUT_SESSION_ID}}&user_id={user['id']}&product_id={product_id}",
-            cancel_url=request.url_for('payment_cancel', _external=True),
+            success_url=str(request.url_for('payment_success', _external=True)) +
+                f"?session_id={{CHECKOUT_SESSION_ID}}&user_id={user['id']}&product_id={product_id}",
+            cancel_url=str(request.url_for('payment_cancel', _external=True)),
             client_reference_id=user['id'],
             metadata={
                 "user_id": user['id'],
                 "product_id": product_id
             }
         )
+# ...existing code...
         
         print(f"Checkout session created: {checkout_session.id}")
         return JSONResponse({"id": checkout_session.id})
